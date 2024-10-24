@@ -12,7 +12,6 @@ Describe "Rust" {
         @{ToolName = "cbindgen.exe"; binPath = "C:\Users\Default\.cargo\bin\cbindgen.exe"}
         @{ToolName = "cargo"; binPath = "C:\Users\Default\.cargo\bin\cargo.exe"}
         @{ToolName = "cargo audit"; binPath = "C:\Users\Default\.cargo\bin\cargo-audit.exe"}
-        @{ToolName = "cargo outdated"; binPath = "C:\Users\Default\.cargo\bin\cargo-outdated.exe"}
     )
 
     $rustEnvNotExists = @(
