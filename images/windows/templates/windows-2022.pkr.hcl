@@ -253,8 +253,7 @@ build {
       "${path.root}/../scripts/build/Configure-BaseImage.ps1",
       "${path.root}/../scripts/build/Configure-ImageDataFile.ps1",
       "${path.root}/../scripts/build/Configure-SystemEnvironment.ps1",
-      "${path.root}/../scripts/build/Configure-DotnetSecureChannel.ps1",
-      "${path.root}/../scripts/build/Install-Wsl2.ps1"
+      "${path.root}/../scripts/build/Configure-DotnetSecureChannel.ps1"
     ]
   }
 
@@ -271,7 +270,13 @@ build {
   provisioner "powershell" {
     environment_vars = ["IMAGE_FOLDER=${var.image_folder}"]
     scripts          = [
-      "${path.root}/../scripts/build/Install-DockerLinux.ps1",
+      "${path.root}/../scripts/build/Install-DockerLinux.ps1"
+    ]
+  }
+
+  provisioner "powershell" {
+    environment_vars = ["IMAGE_FOLDER=${var.image_folder}"]
+    scripts          = [
       "${path.root}/../scripts/build/Install-DockerCli.ps1",
       "${path.root}/../scripts/build/Install-DockerWinCred.ps1",
       "${path.root}/../scripts/build/Install-DockerCompose.ps1",

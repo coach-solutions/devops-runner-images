@@ -21,7 +21,7 @@ parameters:
   - name: agent_pool
     type: object
     default:
-      name: 'ci-agent-pool'
+      name: 'long-running-managed-pool'
 
   - name: variable_group_name
     type: string
@@ -81,7 +81,7 @@ jobs:
         $TempResourceGroupName = "packer-temp-$ManagedImageName"
         Write-Host "##vso[task.setvariable variable=TempResourceGroupName;]$TempResourceGroupName"
 
-        $clientSecret = $(az keyvault secret show --name "spnhostedrunners" --vault-name "gh-imagegeneration" --query value -o tsv)
+        $clientSecret = $(az keyvault secret show --name "spnimagegeneration" --vault-name "kv-devops-imagegeneration" --query value -o tsv)
         Write-Host "##vso[task.setvariable variable=ClientSecret;issecret=true]$clientSecret"
 
   - task: PowerShell@2
