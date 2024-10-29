@@ -29,7 +29,7 @@ parameters:
 
   - name: create_release
     type: boolean
-    default: true
+    default: false
 
   - name: repository_ref
     type: string
