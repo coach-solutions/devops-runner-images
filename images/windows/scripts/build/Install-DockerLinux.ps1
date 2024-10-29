@@ -166,7 +166,7 @@ Start-ScheduledTask 'Install-Docker-Wsl'
 
 $timeout = 300 ##  seconds
 $timer =  [Diagnostics.Stopwatch]::StartNew()
-while (((Get-ScheduledTask -TaskName 'Install-Docker-Wsl').State -ne  'Ready') -and  ($timer.Elapsed.TotalSeconds -lt $timeout))
+while (((Get-ScheduledTask -TaskName 'Install-Docker-Wsl').State -ne 'Ready') -and ($timer.Elapsed.TotalSeconds -lt $timeout))
 {
     Write-Verbose -Message "Waiting on scheduled task..."
     Start-Sleep -Seconds  3   
@@ -191,3 +191,23 @@ $principal = New-ScheduledTaskPrincipal -RunLevel Highest $dockerUser -LogonType
 $task = New-ScheduledTask -Action $wslStartAction -Principal $principal -Trigger $wslStartupTrigger -Settings $wslStartupSettings
 Register-ScheduledTask 'Start-Docker-Wsl-On-Boot' -User $dockerUser -Password $dockerPassword -InputObject $task
 Start-ScheduledTask 'Start-Docker-Wsl-On-Boot'
+
+$timeout = 90 ##  seconds
+$sshExitCode = 255
+$timer =  [Diagnostics.Stopwatch]::StartNew()
+while ((((Get-ScheduledTask -TaskName 'Start-Docker-Wsl-On-Boot').State -ne 'Ready') `
+    -or ((Get-ScheduledTask -TaskName 'Run-Docker-Wsl').State -ne 'Running') `
+    -or $sshExitCode -ne 0) `
+    -and ($timer.Elapsed.TotalSeconds -lt $timeout))
+{
+    Write-Verbose -Message "Waiting on scheduled task..."
+    Start-Sleep -Seconds  3
+    ssh.exe -o StrictHostKeyChecking=accept-new 'dockerssh@localhost' echo Connection Ok
+    $sshExitCode = $LASTEXITCODE
+}
+$timer.Stop()
+
+If ($sshExitCode -ne 0)
+{
+    throw 'Failed to start Docker linux distribution'
+}
