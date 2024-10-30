@@ -47,7 +47,7 @@ Function CreateAzureVMFromPackerTemplate {
         [string] $AzureLocation
     )
 
-    $vmSize = "Standard_DS2_v2"
+    $vmSize = "Standard_D2s_v4"
     $guid = [System.GUID]::NewGuid().ToString().ToUpper()
     $vnetName = $env:UserName + "vnet-" + $guid
     $subnetName = $env:UserName + "subnet-" + $guid

@@ -29,16 +29,16 @@ WaitUntilServices "Hyper-V Virtual Machine Management" "Running"
 WaitUntilServices "WSL Service" "Running"
 WaitUntilServices "User Profile Service" "Running"
 
-Start-ScheduledTask 'Run-Docker-Wsl'
+Start-ScheduledTask -TaskPath '\DockerLinux\' 'Run-Docker-Wsl'
 Start-Sleep -Seconds 3
 
 $timeout = 30 ##  seconds
 $timer =  [Diagnostics.Stopwatch]::StartNew()
-while (((Get-ScheduledTask -TaskName 'Run-Docker-Wsl').State -eq 'Ready') -and ($timer.Elapsed.TotalSeconds -lt $timeout))
+while (((Get-ScheduledTask -TaskName 'Run-Docker-Wsl' -TaskPath '\DockerLinux\').State -eq 'Ready') -and ($timer.Elapsed.TotalSeconds -lt $timeout))
 {
     Write-Verbose -Message "Re-run scheduled task..."
     
-    Start-ScheduledTask 'Run-Docker-Wsl'
+    Start-ScheduledTask -TaskPath '\DockerLinux\' 'Run-Docker-Wsl'
     Start-Sleep -Seconds 3
 }
 $timer.Stop()
@@ -161,12 +161,12 @@ $wslInstallAction = New-ScheduledTaskAction 'C:\Windows\System32\WindowsPowerShe
 $wslInstallSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Days 31)
 $principal = New-ScheduledTaskPrincipal -RunLevel Highest $dockerUser -LogonType InteractiveOrPassword
 $task = New-ScheduledTask -Action $wslInstallAction -Principal $principal -Settings $wslInstallSettings
-Register-ScheduledTask 'Install-Docker-Wsl' -User $dockerUser -Password $dockerPassword -InputObject $task
-Start-ScheduledTask 'Install-Docker-Wsl'
+Register-ScheduledTask 'Install-Docker-Wsl' -TaskPath '\DockerLinux\' -User $dockerUser -Password $dockerPassword -InputObject $task
+Start-ScheduledTask -TaskPath '\DockerLinux\' 'Install-Docker-Wsl'
 
 $timeout = 300 ##  seconds
 $timer =  [Diagnostics.Stopwatch]::StartNew()
-while (((Get-ScheduledTask -TaskName 'Install-Docker-Wsl').State -ne 'Ready') -and ($timer.Elapsed.TotalSeconds -lt $timeout))
+while (((Get-ScheduledTask -TaskName 'Install-Docker-Wsl' -TaskPath '\DockerLinux\').State -ne 'Ready') -and ($timer.Elapsed.TotalSeconds -lt $timeout))
 {
     Write-Verbose -Message "Waiting on scheduled task..."
     Start-Sleep -Seconds  3   
@@ -182,21 +182,21 @@ $wslRunAction = New-ScheduledTaskAction 'C:\Windows\System32\WindowsPowerShell\v
 $wslRunSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Days 31)
 $principal = New-ScheduledTaskPrincipal -RunLevel Highest $dockerUser -LogonType InteractiveOrPassword
 $task = New-ScheduledTask -Action $wslRunAction -Principal $principal -Settings $wslRunSettings
-Register-ScheduledTask 'Run-Docker-Wsl' -User $dockerUser -Password $dockerPassword -InputObject $task
+Register-ScheduledTask 'Run-Docker-Wsl' -TaskPath '\DockerLinux\' -User $dockerUser -Password $dockerPassword -InputObject $task
 
 $wslStartAction = New-ScheduledTaskAction 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' -Argument 'C:\DockerLinux\Startup.ps1'
 $wslStartupTrigger = New-ScheduledTaskTrigger -AtStartup
 $wslStartupSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Days 31)
 $principal = New-ScheduledTaskPrincipal -RunLevel Highest $dockerUser -LogonType InteractiveOrPassword
 $task = New-ScheduledTask -Action $wslStartAction -Principal $principal -Trigger $wslStartupTrigger -Settings $wslStartupSettings
-Register-ScheduledTask 'Start-Docker-Wsl-On-Boot' -User $dockerUser -Password $dockerPassword -InputObject $task
-Start-ScheduledTask 'Start-Docker-Wsl-On-Boot'
+Register-ScheduledTask 'Start-Docker-Wsl-On-Boot' -TaskPath '\DockerLinux\' -User $dockerUser -Password $dockerPassword -InputObject $task
+Start-ScheduledTask -TaskPath '\DockerLinux\' 'Start-Docker-Wsl-On-Boot'
 
 $timeout = 90 ##  seconds
 $sshExitCode = 255
 $timer =  [Diagnostics.Stopwatch]::StartNew()
-while ((((Get-ScheduledTask -TaskName 'Start-Docker-Wsl-On-Boot').State -ne 'Ready') `
-    -or ((Get-ScheduledTask -TaskName 'Run-Docker-Wsl').State -ne 'Running') `
+while ((((Get-ScheduledTask -TaskName 'Start-Docker-Wsl-On-Boot' -TaskPath '\DockerLinux\').State -ne 'Ready') `
+    -or ((Get-ScheduledTask -TaskName 'Run-Docker-Wsl' -TaskPath '\DockerLinux\').State -ne 'Running') `
     -or $sshExitCode -ne 0) `
     -and ($timer.Elapsed.TotalSeconds -lt $timeout))
 {
