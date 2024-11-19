@@ -91,14 +91,14 @@ while ($wslTries -lt 3)
         wsl.exe -u root -d Ubuntu chmod a+r /etc/apt/keyrings/docker.asc
         wsl.exe -u root -d Ubuntu echo '"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable"' '|' tee /etc/apt/sources.list.d/docker.list '>' /dev/null
         wsl.exe -u root -d Ubuntu apt-get update
-        wsl.exe -u root -d Ubuntu apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y '2>&1'
-        wsl.exe -u root -d Ubuntu systemctl enable docker.service '2>&1'
-        wsl.exe -u root -d Ubuntu systemctl enable containerd.service '2>&1'
-        wsl.exe -u root -d Ubuntu systemctl enable ssh.service '2>&1'
+        wsl.exe -u root -d Ubuntu apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y '2>&1' '||' echo Failure '1>&2'
+        wsl.exe -u root -d Ubuntu systemctl enable docker.service '2>&1' '||' echo Failure '1>&2'
+        wsl.exe -u root -d Ubuntu systemctl enable containerd.service '2>&1' '||' echo Failure '1>&2'
+        wsl.exe -u root -d Ubuntu systemctl enable ssh.service '2>&1' '||' echo Failure '1>&2'
         
         # expose docker to windows
         wsl.exe -u root -d Ubuntu useradd -c'docker user' -m -s /bin/bash dockerssh
-        wsl.exe -u root -d Ubuntu passwd -d dockerssh '2>&1'
+        wsl.exe -u root -d Ubuntu passwd -d dockerssh '2>&1' '||' echo Failure '1>&2'
         wsl.exe -u root -d Ubuntu usermod -a -G docker dockerssh
         wsl.exe -u root -d Ubuntu echo 'PermitEmptyPasswords yes' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
         wsl.exe -u root -d Ubuntu echo 'StrictModes yes' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
@@ -106,6 +106,7 @@ while ($wslTries -lt 3)
         wsl.exe --shutdown
         wsl.exe -u root -d Ubuntu ln -s /mnt/c /c
         wsl.exe -u root -d Ubuntu ln -s /mnt/d /d
+        wsl.exe -u root -d Ubuntu mount --make-shared /mnt/c
 
         break
     }
