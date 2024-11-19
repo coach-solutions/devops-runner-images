@@ -42,7 +42,7 @@
         ],
         "addons": [],
         "additional_tools": [
-            "cmake;3.22.1"
+            "cmake;3.31.0"
         ],
         "ndk": {
             "default": "26",
@@ -72,13 +72,11 @@
             "p7zip",
             "packer",
             "perl",
-            "pkg-config",
             "swiftformat",
-            "tcl-tk",
+            "tcl-tk@8",
             "zstd",
             "gmp",
             "yq",
-            "unxip",
             "xcbeautify",
             "xcodes"
         ],
@@ -135,8 +133,6 @@
                 },
                 "arm64": {
                     "versions": [
-                        "3.9.*",
-                        "3.10.*",
                         "3.11.*",
                         "3.12.*",
                         "3.13.*"
@@ -166,7 +162,6 @@
             "arch": {
                 "x64": {
                     "versions": [
-                        "16.*",
                         "18.*",
                         "20.*",
                         "22.*"
@@ -174,7 +169,6 @@
                 },
                 "arm64": {
                     "versions": [
-                        "16.*",
                         "18.*",
                         "20.*",
                         "22.*"

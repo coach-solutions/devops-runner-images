@@ -538,7 +538,7 @@ function Get-LibXextVersion {
 }
 
 function Get-TclTkVersion {
-    $tcltkVersion = (Run-Command "brew info --json tcl-tk" | ConvertFrom-Json).installed.version
+    $tcltkVersion = (Run-Command "brew info --json tcl-tk@8" | ConvertFrom-Json).installed.version
     return $tcltkVersion
 }
 
@@ -618,4 +618,9 @@ function Get-XcbeautifyVersion {
 function Get-XcodesVersion {
     $XcodesVersion = Run-Command "xcodes version"
     return $XcodesVersion
+}
+
+function Get-UnxipVersion {
+    $unxipVersion = Run-Command "unxip --version" | Take-Part -Part 1
+    return $unxipVersion
 }
