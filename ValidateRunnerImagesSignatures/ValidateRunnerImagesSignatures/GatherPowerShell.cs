@@ -1,0 +1,324 @@
+﻿using System.Linq;
+using System.Management.Automation.Language;
+using System.Text;
+
+namespace ValidateRunnerImagesSignatures;
+
+public static class GatherPowerShell
+{
+    private static readonly StringComparer _comparer = StringComparer.InvariantCultureIgnoreCase;
+
+    private static readonly HashSet<string> _gatheredCommands = new HashSet<string>(_comparer);
+    private static readonly HashSet<string> _allowedCommands = new HashSet<string>(_comparer)
+    {
+        "Install-Binary",
+        "Invoke-DownloadWithRetry",
+        "Join-Path",
+        "Test-Path",
+        "Split-Path",
+        "New-Item",
+        "Out-Null",
+        "Expand-7ZipArchive",
+        "Get-ToolsetContent",
+        "Invoke-WebRequest",
+        "Where-Object",
+        "Select-String",
+        "ForEach-Object",
+        "Invoke-RestMethod",
+        "Sort-Object",
+        "Test-IsWin19",
+        "Test-IsWin22",
+        "Resolve-GithubReleaseAssetUrl",
+        "Get-ChecksumFromUrl",
+        "Test-FileSignature",
+        "Test-FileChecksum",
+        "Get-Item",
+        "Get-Content",
+        "Get-ItemProperty",
+        "Get-GithubReleasesByVersion",
+        "Write-Host",
+        "Get-ChecksumFromGithubRelease",
+        "ConvertFrom-HTML",
+        "Get-Member",
+        "Select-Object",
+        "Remove-Item"
+    };
+
+    private static readonly HashSet<string> _skipCommands = new HashSet<string>(_comparer)
+    {
+        "Add-MachinePathItem",
+        "Out-File",
+        "Copy-Item",
+        "Install-PyPy"
+    };
+
+    private static readonly Dictionary<string, string> _replacementCommands = new Dictionary<string, string>(_comparer)
+    {
+        ["Test-IsWin19"] = "$false",
+        ["Test-IsWin22"] = "$true",
+        ["Install-Binary"] = "Validate-Install-Binary",
+        ["Remove-Item"] = "Validate-Remove-Item"
+    };
+
+    private static readonly Dictionary<string, Func<List<Token>, bool>> _searchedTokens = new Dictionary<string, Func<List<Token>, bool>>(_comparer)
+    {
+        ["Install-Binary"] = tokens => tokens.Any(t => t.Kind == TokenKind.Parameter
+            && (t.Text.Equals("-ExpectedSignature", StringComparison.InvariantCultureIgnoreCase)
+                || t.Text.Equals("-ExpectedSHA256Sum", StringComparison.InvariantCultureIgnoreCase)
+                || t.Text.Equals("-ExpectedSHA512Sum", StringComparison.InvariantCultureIgnoreCase))),
+        ["Test-FileSignature"] = _ => true,
+        ["Test-FileChecksum"] = _ => true
+    };
+
+    public static string GatherScriptParts(string directory)
+    {
+        var combinedScriptParts = new StringBuilder();
+
+        var psFiles = Directory.GetFiles(directory, "*.ps1", SearchOption.AllDirectories);
+        foreach (var psFile in psFiles)
+        {
+            var scriptBlock = Parser.ParseFile(psFile, out Token[] tokens, out ParseError[] errors);
+            var scriptString = File.ReadAllText(psFile);
+
+            var indexedTokens = IndexTokens(tokens, out var commands, out var variableUses);
+
+            foreach (var searchedToken in _searchedTokens)
+            {
+                if (commands.TryGetValue(searchedToken.Key, out var commandList))
+                {
+                    foreach (var (line, token) in commandList)
+                    {
+                        var lineTokens = indexedTokens[line];
+                        if (searchedToken.Value(lineTokens) && lineTokens[0].Kind != TokenKind.Function)
+                        {
+                            var matchedToken = indexedTokens[line][token];
+
+                            var relatedScriptParts = GatherRelatedLines(scriptString, indexedTokens, variableUses, line, line);
+                            combinedScriptParts.AppendLine($"Write-Host '{matchedToken.Extent.File}:{matchedToken.Extent.StartLineNumber}:{matchedToken.Extent.StartColumnNumber}'");
+                            combinedScriptParts.AppendLine(relatedScriptParts);
+                        }
+                    }
+                }
+            }
+        }
+
+        return combinedScriptParts.ToString();
+    }
+
+    public static string GatherRelatedLines(string scriptString,
+        List<List<Token>> indexedTokens,
+        Dictionary<string, List<(int Line, int Token)>> variableUses,
+        int line, int maxLine)
+    {
+        var includedLines = new HashSet<int>();
+        var lineQueue = new Queue<int>();
+        lineQueue.Enqueue(line);
+
+        while (lineQueue.Count > 0)
+        {
+            var curLine = lineQueue.Dequeue();
+            if (curLine > maxLine || includedLines.Contains(curLine))
+            {
+                continue;
+            }
+
+            includedLines.Add(curLine);
+
+            var lineTokens = indexedTokens[curLine];
+
+            var variables = ExpandStringExpandableTokens(lineTokens)
+                .OfType<VariableToken>()
+                .Select(t => t.VariablePath.UserPath)
+                .ToList();
+
+            foreach (var variable in variables)
+            {
+                if (variable.StartsWith("env:", StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+
+                var declarationLines = variableUses[variable];
+                foreach (var (declarationLine, _) in declarationLines)
+                {
+                    lineQueue.Enqueue(declarationLine);
+                }
+            }
+        }
+
+        var relatedLinesBuilder = new StringBuilder();
+        foreach (var relatedLine in includedLines.OrderBy(l => l))
+        {
+            var lineTokens = indexedTokens[relatedLine];
+            lineTokens = RemoveSkippedLines(lineTokens);
+            if (lineTokens.Count == 0 || lineTokens[0].Kind == TokenKind.Function)
+                continue;
+
+            var invalidToken = lineTokens.FirstOrDefault(t => t.Kind == TokenKind.Generic && t.TokenFlags == TokenFlags.CommandName && !_allowedCommands.Contains(t.Text));
+            if (invalidToken is not null)
+                throw new InvalidOperationException($"Found a command '{invalidToken.Text}' that is not allowed in the script.");
+
+            var token = lineTokens[0];
+            HandleToken(relatedLinesBuilder, token);
+            for (var i = 1; i < lineTokens.Count; ++i)
+            {
+                var whitespace = scriptString.Substring(token.Extent.EndOffset, lineTokens[i].Extent.StartOffset - token.Extent.EndOffset);
+                if (string.IsNullOrWhiteSpace(whitespace))
+                    relatedLinesBuilder.Append(whitespace);
+
+                token = lineTokens[i];
+                HandleToken(relatedLinesBuilder, token);
+            }
+        }
+
+        return relatedLinesBuilder.ToString();
+    }
+
+    private static List<Token> RemoveSkippedLines(List<Token> lineTokens)
+    {
+        var hasSkipToken = lineTokens.Any(t => t.Kind == TokenKind.Generic && t.TokenFlags == TokenFlags.CommandName && _skipCommands.Contains(t.Text));
+        if (hasSkipToken)
+        {
+            var newLineTokens = new List<Token>();
+            var curLine = new List<Token>();
+            var skipCurLine = false;
+            foreach (var token in lineTokens)
+            {
+                curLine.Add(token);
+
+                if (token.Kind == TokenKind.Generic && token.TokenFlags == TokenFlags.CommandName && _skipCommands.Contains(token.Text))
+                {
+                    skipCurLine = true;
+                }
+                else if (token.Kind == TokenKind.NewLine || token.Kind == TokenKind.LCurly || token.Kind == TokenKind.RCurly)
+                {
+                    if (!skipCurLine)
+                        newLineTokens.AddRange(curLine);
+
+                    skipCurLine = false;
+                    curLine.Clear();
+                }
+            }
+            newLineTokens.AddRange(curLine);
+
+            return newLineTokens;
+        }
+
+        return lineTokens;
+    }
+
+    private static void HandleToken(StringBuilder relatedLinesBuilder, Token token)
+    {
+        if (token.Kind == TokenKind.Generic && token.TokenFlags == TokenFlags.CommandName)
+        {
+            _gatheredCommands.Add(token.Text);
+
+            if (_replacementCommands.TryGetValue(token.Text, out var replacement))
+            {
+                relatedLinesBuilder.Append(replacement);
+                return;
+            }
+        }
+
+        relatedLinesBuilder.Append(token.Text);
+    }
+
+    private static List<Token> ExpandStringExpandableTokens(List<Token> tokens)
+    {
+        return tokens.SelectMany(Expand).ToList();
+    }
+
+    private static IEnumerable<Token> Expand(Token token)
+    {
+        if (token is StringExpandableToken stringExpandableToken)
+        {
+            var nestedTokens = stringExpandableToken.NestedTokens;
+            return nestedTokens is null
+                ? [ token ]
+                : nestedTokens.SelectMany(Expand);
+        }
+
+        return [ token ];
+    }
+
+    public static List<List<Token>> IndexTokens(Token[] tokens,
+        out Dictionary<string, List<(int Line, int Token)>> commands,
+        out Dictionary<string, List<(int Line, int Token)>> variableUses)
+    {
+        var lineSplitTokens = new List<List<Token>>();
+
+        commands = new Dictionary<string, List<(int Line, int Token)>>(_comparer);
+        variableUses = new Dictionary<string, List<(int Line, int Token)>>(_comparer);
+
+        var openBraceCount = 0;
+        var openParenCount = 0;
+        var openBracketCount = 0;
+        var curSplit = new List<Token>();
+        for (var i = 0; i < tokens.Length; ++i)
+        {
+            var token = tokens[i];
+            if (token.Kind == TokenKind.NewLine && openBraceCount == 0 && openParenCount == 0 && openBracketCount == 0)
+            {
+                curSplit.Add(token);
+                lineSplitTokens.Add(curSplit);
+                curSplit = new List<Token>();
+            }
+            else
+            {
+                curSplit.Add(token);
+
+                if (token.Kind == TokenKind.LCurly || token.Kind == TokenKind.AtCurly)
+                {
+                    openBraceCount++;
+                }
+                else if (token.Kind == TokenKind.RCurly)
+                {
+                    openBraceCount--;
+                }
+                else if (token.Kind == TokenKind.LParen || token.Kind == TokenKind.AtParen || token.Kind == TokenKind.DollarParen)
+                {
+                    openParenCount++;
+                }
+                else if (token.Kind == TokenKind.RParen)
+                {
+                    openParenCount--;
+                }
+                else if (token.Kind == TokenKind.LBracket)
+                {
+                    openBracketCount++;
+                }
+                else if (token.Kind == TokenKind.RBracket)
+                {
+                    openBracketCount--;
+                }
+
+                if (token.Kind == TokenKind.Generic && token.TokenFlags == TokenFlags.CommandName)
+                {
+                    if (!commands.TryGetValue(token.Text, out var commandList))
+                    {
+                        commandList = new List<(int Line, int Token)>();
+                        commands[token.Text] = commandList;
+                    }
+                    
+                    commandList.Add((lineSplitTokens.Count, curSplit.Count - 1));
+                }
+
+                if (token is VariableToken variableToken)
+                {
+                    if (!variableUses.TryGetValue(variableToken.Name, out var variableList))
+                    {
+                        variableList = new List<(int Line, int Token)>();
+                        variableUses[variableToken.Name] = variableList;
+                    }
+
+                    variableList.Add((lineSplitTokens.Count, curSplit.Count - 2));
+                }
+            }
+        }
+
+        if (curSplit.Count > 0)
+        {
+            lineSplitTokens.Add(curSplit);
+        }
+
+        return lineSplitTokens;
+    }
+}
