@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ValidateRunnerImagesSignatures;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var curDir = Environment.CurrentDirectory;
 var repoDir = Path.GetFullPath(Path.Combine(curDir, "..", "..", "..", "..", ".."));
@@ -92,13 +93,34 @@ function Validate-Remove-Item {
     )
 
     if ($Path.Contains('\temp\', 'InvariantCultureIgnoreCase')) {
-        & Remove-Item -Path $Path @Remaining
+        if ($Remaining -eq $null) {
+            & Remove-Item -Path $Path
+        } else {
+            & Remove-Item -Path $Path @Remaining
+        }
     } else {
-        Write-Host ""Skipping removing ""
+        Write-Host ""Skipping removing""
+    }
+}
+
+function Validate-Rename-Item {
+    param(
+        [Parameter(Mandatory, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [string]$Path,
+
+        [Parameter(Mandatory, Position=1)]
+        [string]$NewName
+    )
+
+    if ($Path.Contains('\temp\', 'InvariantCultureIgnoreCase')) {
+        & Rename-Item -Path $Path -NewName $NewName
+    } else {
+        Write-Host ""Skipping renaming""
     }
 }
 
 " + $@"$env:IMAGE_FOLDER = '{tempDir}'
+$env:AGENT_TOOLSDIRECTORY = '{tempDir}\tools'
 $errorActionOldValue = $ErrorActionPreference
 Copy-Item -Path ""{repoDir}\images\windows\toolsets\toolset-2022.json"" -Destination ""$env:IMAGE_FOLDER\toolset.json"" -Force
 ";
@@ -140,6 +162,19 @@ var process = new Process
 process.Start();
 process.WaitForExit();
 
-Directory.Delete(tempDir, true);
+DirectoryInfo dir = new DirectoryInfo(tempDir);
+if (dir.Exists)
+{
+    SetAttributesNormal(dir);
+    dir.Delete(true);
+}
+void SetAttributesNormal(DirectoryInfo dir)
+{
+    foreach (var subDir in dir.GetDirectories())
+        SetAttributesNormal(subDir);
+
+    foreach (var file in dir.GetFiles())
+        file.Attributes = FileAttributes.Normal;
+}
 
 Console.ReadLine();

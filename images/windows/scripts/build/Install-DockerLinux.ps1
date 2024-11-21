@@ -46,6 +46,7 @@ $timer.Stop()
 $startupScript | Out-File -FilePath C:\DockerLinux\Startup.ps1
 
 $runScript = @'
+& "C:\Program Files\WSL\wsl.exe" '-u' 'root' '-d' 'Docker' 'mount' '--make-shared' '/mnt/c'
 & "C:\Program Files\WSL\wsl.exe" '-u' 'root' '-d' 'Docker' '-e' '/bin/bash'
 '@
 $runScript | Out-File -FilePath C:\DockerLinux\Run.ps1

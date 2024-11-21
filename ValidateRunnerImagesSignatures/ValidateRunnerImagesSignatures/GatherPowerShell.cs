@@ -11,7 +11,15 @@ public static class GatherPowerShell
     private static readonly HashSet<string> _gatheredCommands = new HashSet<string>(_comparer);
     private static readonly HashSet<string> _allowedCommands = new HashSet<string>(_comparer)
     {
+        // Commands exchanged with validation commands
         "Install-Binary",
+        "Remove-Item",
+        "Rename-Item",
+        // Modified functions in the scripts
+        "Install-DotnetSDK",
+        "Install-JavaJDK",
+        "Install-Msys2",
+        // Safe commands
         "Invoke-DownloadWithRetry",
         "Join-Path",
         "Test-Path",
@@ -41,7 +49,21 @@ public static class GatherPowerShell
         "ConvertFrom-HTML",
         "Get-Member",
         "Select-Object",
-        "Remove-Item"
+        "Get-AndroidPackages",
+        "Get-AndroidPlatformPackages",
+        "Get-AndroidBuildToolPackages",
+        "Get-SDKVersionsToInstall",
+        "ConvertFrom-Json",
+        "Group-Object",
+        "Invoke-ScriptBlockWithRetry",
+        "Get-ChildItem"
+    };
+
+    private static readonly HashSet<string> _allowedStaticMemberAccess = new HashSet<string>(_comparer)
+    {
+        "[System.Diagnostics.FileVersionInfo]::GetVersionInfo",
+        "[System.IO.Path]::GetTempPath",
+        "[System.IO.Path]::GetRandomFileName"
     };
 
     private static readonly HashSet<string> _skipCommands = new HashSet<string>(_comparer)
@@ -49,7 +71,22 @@ public static class GatherPowerShell
         "Add-MachinePathItem",
         "Out-File",
         "Copy-Item",
-        "Install-PyPy"
+        "Install-PyPy",
+        "Install-AndroidSDKPackages",
+        "Invoke-Expression",        
+        "Invoke-DotnetWarmup",
+        "Set-JavaPath",
+        "Install-Msys2Packages",
+        "Install-MingwPackages",
+        "Install-VSIXFromFile"
+    };
+
+    private static readonly HashSet<string> _skipRawTokenText = new HashSet<string>(_comparer)
+    {
+        "\"$SDKInstallRoot\\android-sdk-licenses.zip\"",
+        "\"ndk;$ndkLatestMajorVersion\"",
+        "\"ndk;$ndkDefaultMajorVersion\"",
+        "\"C:\\$_\\bin\\mingw32-make.exe\""
     };
 
     private static readonly Dictionary<string, string> _replacementCommands = new Dictionary<string, string>(_comparer)
@@ -57,7 +94,8 @@ public static class GatherPowerShell
         ["Test-IsWin19"] = "$false",
         ["Test-IsWin22"] = "$true",
         ["Install-Binary"] = "Validate-Install-Binary",
-        ["Remove-Item"] = "Validate-Remove-Item"
+        ["Remove-Item"] = "Validate-Remove-Item",
+        ["Rename-Item"] = "Validate-Rename-Item"
     };
 
     private static readonly Dictionary<string, Func<List<Token>, bool>> _searchedTokens = new Dictionary<string, Func<List<Token>, bool>>(_comparer)
@@ -89,12 +127,13 @@ public static class GatherPowerShell
                     foreach (var (line, token) in commandList)
                     {
                         var lineTokens = indexedTokens[line];
-                        if (searchedToken.Value(lineTokens) && lineTokens[0].Kind != TokenKind.Function)
+                        if (searchedToken.Value(lineTokens) /*&& lineTokens[0].Kind != TokenKind.Function*/)
                         {
                             var matchedToken = indexedTokens[line][token];
 
-                            var relatedScriptParts = GatherRelatedLines(scriptString, indexedTokens, variableUses, line, line);
-                            combinedScriptParts.AppendLine($"Write-Host '{matchedToken.Extent.File}:{matchedToken.Extent.StartLineNumber}:{matchedToken.Extent.StartColumnNumber}'");
+                            var relatedScriptParts = GatherRelatedLines(scriptString, indexedTokens, commands, variableUses, line);
+                            combinedScriptParts.AppendLine("Write-Host");
+                            combinedScriptParts.AppendLine($"Write-Host '{matchedToken.Extent.File}:{matchedToken.Extent.StartLineNumber}:{matchedToken.Extent.StartColumnNumber}' -ForegroundColor Green");
                             combinedScriptParts.AppendLine(relatedScriptParts);
                         }
                     }
@@ -105,10 +144,13 @@ public static class GatherPowerShell
         return combinedScriptParts.ToString();
     }
 
+    private static Dictionary<string, HashSet<int>> _alreadyOutputLines = new Dictionary<string, HashSet<int>>();
+
     public static string GatherRelatedLines(string scriptString,
         List<List<Token>> indexedTokens,
+        Dictionary<string, List<(int Line, int Token)>> commands,
         Dictionary<string, List<(int Line, int Token)>> variableUses,
-        int line, int maxLine)
+        int line)
     {
         var includedLines = new HashSet<int>();
         var lineQueue = new Queue<int>();
@@ -117,7 +159,7 @@ public static class GatherPowerShell
         while (lineQueue.Count > 0)
         {
             var curLine = lineQueue.Dequeue();
-            if (curLine > maxLine || includedLines.Contains(curLine))
+            if (includedLines.Contains(curLine))
             {
                 continue;
             }
@@ -142,14 +184,43 @@ public static class GatherPowerShell
                     lineQueue.Enqueue(declarationLine);
                 }
             }
+
+            var functionName = lineTokens[0].Kind == TokenKind.Function ? lineTokens.FirstOrDefault(t => t.Kind == TokenKind.Generic)?.Text : null;
+
+            if (functionName is not null)
+            {
+                if (commands.TryGetValue(functionName, out var calls) && !_skipCommands.Contains(functionName))
+                {
+                    foreach (var (callLine, _) in calls)
+                    {
+                        if (callLine != curLine)
+                            lineQueue.Enqueue(callLine);
+                    }
+                }
+            }
+        }
+
+        if (_alreadyOutputLines.TryGetValue(scriptString, out var alreadyOutputLines))
+        {
+            includedLines = includedLines.Except(alreadyOutputLines).ToHashSet();
+            alreadyOutputLines.UnionWith(includedLines);
+        }
+        else
+        {
+            _alreadyOutputLines[scriptString] = includedLines;
         }
 
         var relatedLinesBuilder = new StringBuilder();
         foreach (var relatedLine in includedLines.OrderBy(l => l))
         {
             var lineTokens = indexedTokens[relatedLine];
+
+            var functionName = lineTokens[0].Kind == TokenKind.Function ? lineTokens.FirstOrDefault(t => t.Kind == TokenKind.Generic)?.Text : null;
+            if (functionName is not null && _skipCommands.Contains(functionName))
+                continue;
+
             lineTokens = RemoveSkippedLines(lineTokens);
-            if (lineTokens.Count == 0 || lineTokens[0].Kind == TokenKind.Function)
+            if (lineTokens.Count == 0 /*|| lineTokens[0].Kind == TokenKind.Function*/)
                 continue;
 
             var invalidToken = lineTokens.FirstOrDefault(t => t.Kind == TokenKind.Generic && t.TokenFlags == TokenFlags.CommandName && !_allowedCommands.Contains(t.Text));
@@ -174,27 +245,53 @@ public static class GatherPowerShell
 
     private static List<Token> RemoveSkippedLines(List<Token> lineTokens)
     {
-        var hasSkipToken = lineTokens.Any(t => t.Kind == TokenKind.Generic && t.TokenFlags == TokenFlags.CommandName && _skipCommands.Contains(t.Text));
+        var hasSkipToken = lineTokens.Any(SkipToken);
         if (hasSkipToken)
         {
             var newLineTokens = new List<Token>();
             var curLine = new List<Token>();
             var skipCurLine = false;
+            var openParenCount = 0;
             foreach (var token in lineTokens)
             {
-                curLine.Add(token);
-
-                if (token.Kind == TokenKind.Generic && token.TokenFlags == TokenFlags.CommandName && _skipCommands.Contains(token.Text))
+                if (token.Kind == TokenKind.LParen || token.Kind == TokenKind.AtParen || token.Kind == TokenKind.DollarParen)
                 {
+                    openParenCount++;
+                }
+                else if (token.Kind == TokenKind.RParen)
+                {
+                    openParenCount--;
+                    if (openParenCount < 0) throw new InvalidOperationException("Unbalanced parenthesis.");
+                }
+
+                if (SkipToken(token))
+                {
+                    curLine.Add(token);
                     skipCurLine = true;
                 }
-                else if (token.Kind == TokenKind.NewLine || token.Kind == TokenKind.LCurly || token.Kind == TokenKind.RCurly)
+                else if ((token.Kind == TokenKind.LCurly || token.Kind == TokenKind.RCurly) && openParenCount == 0)
                 {
                     if (!skipCurLine)
                         newLineTokens.AddRange(curLine);
 
                     skipCurLine = false;
                     curLine.Clear();
+
+                    curLine.Add(token);
+                }
+                else if (token.Kind == TokenKind.NewLine)
+                {
+                    curLine.Add(token);
+
+                    if (!skipCurLine)
+                        newLineTokens.AddRange(curLine);
+
+                    skipCurLine = false;
+                    curLine.Clear();
+                }
+                else
+                {
+                    curLine.Add(token);
                 }
             }
             newLineTokens.AddRange(curLine);
@@ -203,6 +300,26 @@ public static class GatherPowerShell
         }
 
         return lineTokens;
+
+        bool SkipToken(Token token)
+        {
+            if (token.Kind == TokenKind.Generic && token.TokenFlags == TokenFlags.CommandName && _skipCommands.Contains(token.Text))
+                return true;
+
+            if (token.Kind == TokenKind.Ampersand)
+                return true;
+
+            if (token.Kind == TokenKind.ColonColon && !_allowedStaticMemberAccess.Any(allowed => token.Extent.StartScriptPosition.Line.Contains(allowed, StringComparison.InvariantCultureIgnoreCase)))
+                return true;
+
+            if (token.Kind == TokenKind.Identifier && token.TokenFlags == TokenFlags.CommandName)
+                return true;
+
+            if (_skipRawTokenText.Contains(token.Text))
+                return true;
+
+            return false;
+        }
     }
 
     private static void HandleToken(StringBuilder relatedLinesBuilder, Token token)
@@ -272,6 +389,7 @@ public static class GatherPowerShell
                 else if (token.Kind == TokenKind.RCurly)
                 {
                     openBraceCount--;
+                    if (openBraceCount < 0) throw new InvalidOperationException("Unbalanced curly braces.");
                 }
                 else if (token.Kind == TokenKind.LParen || token.Kind == TokenKind.AtParen || token.Kind == TokenKind.DollarParen)
                 {
@@ -280,6 +398,7 @@ public static class GatherPowerShell
                 else if (token.Kind == TokenKind.RParen)
                 {
                     openParenCount--;
+                    if (openParenCount < 0) throw new InvalidOperationException("Unbalanced parenthesis.");
                 }
                 else if (token.Kind == TokenKind.LBracket)
                 {
@@ -288,6 +407,7 @@ public static class GatherPowerShell
                 else if (token.Kind == TokenKind.RBracket)
                 {
                     openBracketCount--;
+                    if (openBracketCount < 0) throw new InvalidOperationException("Unbalanced square braces.");
                 }
 
                 if (token.Kind == TokenKind.Generic && token.TokenFlags == TokenFlags.CommandName)
