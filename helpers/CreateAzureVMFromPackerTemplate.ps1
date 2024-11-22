@@ -47,7 +47,7 @@ Function CreateAzureVMFromPackerTemplate {
         [string] $AzureLocation
     )
 
-    $vmSize = "Standard_D2s_v4"
+    $vmSize = "Standard_D8s_v4"
     $guid = [System.GUID]::NewGuid().ToString().ToUpper()
     $vnetName = $env:UserName + "vnet-" + $guid
     $subnetName = $env:UserName + "subnet-" + $guid
@@ -69,7 +69,7 @@ Function CreateAzureVMFromPackerTemplate {
     Write-Host "`nAdding the public IP to the NIC"
     az network nic ip-config update -g $ResourceGroupName -n ipconfig1 --nic-name $nicName --public-ip-address $publicIpId --subscription $subscriptionId
 
-    Write-Host "`nCreating the VM"
+    Write-Host "`nCreating the VM ($vmSize)"
     az vm create `
         --resource-group $ResourceGroupName `
         --name $VirtualMachineName `
