@@ -48,7 +48,7 @@ $startupScript | Out-File -FilePath C:\DockerLinux\Startup.ps1
 $runScript = @'
 & "C:\Program Files\WSL\wsl.exe" '-u' 'root' '-d' 'Docker' 'mount' '--make-shared' '/mnt/c'
 $pwsh_exe = (Get-Command pwsh.exe).Source.Replace('C:\', '/mnt/c/').Replace('\', '/')
-& "C:\Program Files\WSL\wsl.exe" '-u' 'dockerssh' '-d' 'Docker' '/mnt/c/DockerLinux/npipe_socket_adapter.py' 'socket-to-npipe' '-p' $pwsh_exe '-s' '/var/run/docker.sock' '-n' 'docker_engine'
+& "C:\Program Files\WSL\wsl.exe" '-u' 'dockerssh' '-d' 'Docker' '/mnt/c/DockerLinux/npipe_socket_adapter.py' '--verbose' 'socket-to-npipe' '-p' "$pwsh_exe" '-s' '/var/run/docker.sock' '-n' 'docker_engine' '2>&1' > C:\DockerLinux\sock.log
 '@
 $runScript | Out-File -FilePath C:\DockerLinux\Run.ps1
 
@@ -357,7 +357,7 @@ if __name__ == "__main__":
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 '@
-$pipeAdapterScript | Out-File -FilePath C:\DockerLinux\npipe_socket_adapter.py
+$pipeAdapterScript.Replace("`r`n", "`n") | Out-File -FilePath C:\DockerLinux\npipe_socket_adapter.py
 
 # install WSL msi
 $wslDownloadUrl = Resolve-GithubReleaseAssetUrl `
