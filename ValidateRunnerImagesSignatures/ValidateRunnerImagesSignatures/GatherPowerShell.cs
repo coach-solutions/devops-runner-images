@@ -15,6 +15,9 @@ public static class GatherPowerShell
         "Install-Binary",
         "Remove-Item",
         "Rename-Item",
+        "Test-IsWin19",
+        "Test-IsWin22",
+        "Test-IsWin25",
         // Modified functions in the scripts
         "Install-DotnetSDK",
         "Install-JavaJDK",
@@ -34,8 +37,6 @@ public static class GatherPowerShell
         "ForEach-Object",
         "Invoke-RestMethod",
         "Sort-Object",
-        "Test-IsWin19",
-        "Test-IsWin22",
         "Resolve-GithubReleaseAssetUrl",
         "Get-ChecksumFromUrl",
         "Test-FileSignature",
@@ -93,6 +94,7 @@ public static class GatherPowerShell
     {
         ["Test-IsWin19"] = "$false",
         ["Test-IsWin22"] = "$true",
+        ["Test-IsWin25"] = "$false",
         ["Install-Binary"] = "Validate-Install-Binary",
         ["Remove-Item"] = "Validate-Remove-Item",
         ["Rename-Item"] = "Validate-Rename-Item"

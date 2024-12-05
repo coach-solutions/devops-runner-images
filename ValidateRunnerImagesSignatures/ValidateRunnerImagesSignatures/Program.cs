@@ -121,6 +121,7 @@ function Validate-Rename-Item {
 
 " + $@"$env:IMAGE_FOLDER = '{tempDir}'
 $env:AGENT_TOOLSDIRECTORY = '{tempDir}\tools'
+$env:TEMP_DIR = '{tempDir}'
 $errorActionOldValue = $ErrorActionPreference
 Copy-Item -Path ""{repoDir}\images\windows\toolsets\toolset-2022.json"" -Destination ""$env:IMAGE_FOLDER\toolset.json"" -Force
 ";
