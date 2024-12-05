@@ -517,5 +517,7 @@ $timer.Stop()
 
 If ($sshExitCode -ne 0)
 {
+    if (Test-Path 'C:\DockerLinux\sock.log') { Get-Content 'C:\DockerLinux\sock.log' }
+
     throw 'Failed to start Docker linux distribution'
 }
