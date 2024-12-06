@@ -357,7 +357,7 @@ if __name__ == "__main__":
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 '@
-$pipeAdapterScript.Replace("`r`n", "`n") | Out-File -FilePath C:\DockerLinux\npipe_socket_adapter.py
+$pipeAdapterScript.Replace("`r`n", "`n") | Out-File -FilePath C:\DockerLinux\npipe_socket_adapter.py -Encoding 'oem'
 
 # install WSL msi
 $wslDownloadUrl = Resolve-GithubReleaseAssetUrl `
@@ -400,14 +400,14 @@ while ($wslTries -lt 3)
         wsl.exe -u root -d Ubuntu chmod a+r /etc/apt/keyrings/docker.asc
         wsl.exe -u root -d Ubuntu echo '"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable"' '|' tee /etc/apt/sources.list.d/docker.list '>' /dev/null
         wsl.exe -u root -d Ubuntu apt-get update
-        wsl.exe -u root -d Ubuntu apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y '2>&1' '||' echo Failure '1>&2'
-        wsl.exe -u root -d Ubuntu systemctl enable docker.service '2>&1' '||' echo Failure '1>&2'
-        wsl.exe -u root -d Ubuntu systemctl enable containerd.service '2>&1' '||' echo Failure '1>&2'
-        wsl.exe -u root -d Ubuntu systemctl enable ssh.service '2>&1' '||' echo Failure '1>&2'
+        wsl.exe -u root -d Ubuntu apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y '2>&1'
+        wsl.exe -u root -d Ubuntu systemctl enable docker.service '2>&1'
+        wsl.exe -u root -d Ubuntu systemctl enable containerd.service '2>&1'
+        wsl.exe -u root -d Ubuntu systemctl enable ssh.service '2>&1'
         
         # expose docker to windows
         wsl.exe -u root -d Ubuntu useradd -c'docker user' -m -s /bin/bash dockerssh
-        wsl.exe -u root -d Ubuntu passwd -d dockerssh '2>&1' '||' echo Failure '1>&2'
+        wsl.exe -u root -d Ubuntu passwd -d dockerssh '2>&1'
         wsl.exe -u root -d Ubuntu usermod -a -G docker dockerssh
         wsl.exe -u root -d Ubuntu echo 'PermitEmptyPasswords yes' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
         wsl.exe -u root -d Ubuntu echo 'StrictModes yes' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
@@ -417,7 +417,14 @@ while ($wslTries -lt 3)
         wsl.exe -u root -d Ubuntu ln -s /mnt/d /d
         wsl.exe -u root -d Ubuntu mount --make-shared /mnt/c
 
-        break
+        ssh.exe -o StrictHostKeyChecking=accept-new 'dockerssh@localhost' echo Done
+        if ($?) {
+            break
+        }
+        else {
+            if (Test-Path "${Env:USERPROFILE}\.ssh\known_hosts") { Remove-Item "${Env:USERPROFILE}\.ssh\known_hosts" }
+            throw 'SSH connection failed.'
+        }
     }
     catch
     {
@@ -433,7 +440,6 @@ while ($wslTries -lt 3)
     }
 }
 
-ssh.exe -o StrictHostKeyChecking=accept-new 'dockerssh@localhost' echo Done
 Copy-Item "${Env:USERPROFILE}\.ssh\known_hosts" "${Env:ALLUSERSPROFILE}\ssh\ssh_known_hosts"
 Remove-Item "${Env:USERPROFILE}\.ssh\known_hosts"
 
