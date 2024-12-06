@@ -62,7 +62,7 @@ jobs:
   - task: AzureCLI@2
     displayName: 'Set variables'
     inputs:
-      azureSubscription: 'DevSubscription'
+      azureSubscription: 'InfrastructureSubscription'
       scriptType: 'pscore'
       scriptLocation: 'inlineScript'
       inlineScript: |
