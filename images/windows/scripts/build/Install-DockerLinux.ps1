@@ -357,7 +357,7 @@ if __name__ == "__main__":
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 '@
-$pipeAdapterScript.Replace("`r`n", "`n") | Out-File -FilePath C:\DockerLinux\npipe_socket_adapter.py -Encoding 'oem'
+$pipeAdapterScript.Replace("`r`n", "`n") | Out-File -FilePath C:\DockerLinux\npipe_socket_adapter.py -Encoding 'ascii'
 
 # install WSL msi
 $wslDownloadUrl = Resolve-GithubReleaseAssetUrl `
