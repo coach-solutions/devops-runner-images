@@ -87,6 +87,8 @@ while ($wslTries -lt 3)
         Write-Host "Install Docker"
         
         wsl.exe -u root -d Ubuntu apt-get install ca-certificates curl openssh-server -y
+        wsl.exe -u root -d Ubuntu echo 'ClientAliveInterval 300' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
+        wsl.exe -u root -d Ubuntu echo 'ClientAliveCountMax 3' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
         wsl.exe -u root -d Ubuntu install -m 0755 -d /etc/apt/keyrings
         wsl.exe -u root -d Ubuntu curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         wsl.exe -u root -d Ubuntu chmod a+r /etc/apt/keyrings/docker.asc
