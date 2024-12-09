@@ -40,7 +40,8 @@ if ($LASTEXITCODE -ne 0) {
     throw "Rust component installation failed with exit code $LASTEXITCODE"
 }
 if (-not (Test-IsWin25)) {
-    cargo install bindgen-cli cbindgen cargo-audit cargo-outdated
+    cargo install bindgen-cli --version 0.70.1 # Temporary fix
+    cargo install cbindgen cargo-audit cargo-outdated
     if ($LASTEXITCODE -ne 0) {
         throw "Rust tools installation failed with exit code $LASTEXITCODE"
     }
