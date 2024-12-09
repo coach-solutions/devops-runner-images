@@ -13,6 +13,7 @@ public static class GatherPowerShell
     {
         // Commands exchanged with validation commands
         "Install-Binary",
+        "Install-VisualStudio",
         "Remove-Item",
         "Rename-Item",
         "Test-IsWin19",
@@ -96,6 +97,7 @@ public static class GatherPowerShell
         ["Test-IsWin22"] = "$true",
         ["Test-IsWin25"] = "$false",
         ["Install-Binary"] = "Validate-Install-Binary",
+        ["Install-VisualStudio"] = "Validate-Install-VisualStudio",
         ["Remove-Item"] = "Validate-Remove-Item",
         ["Rename-Item"] = "Validate-Rename-Item"
     };
@@ -106,6 +108,8 @@ public static class GatherPowerShell
             && (t.Text.Equals("-ExpectedSignature", StringComparison.InvariantCultureIgnoreCase)
                 || t.Text.Equals("-ExpectedSHA256Sum", StringComparison.InvariantCultureIgnoreCase)
                 || t.Text.Equals("-ExpectedSHA512Sum", StringComparison.InvariantCultureIgnoreCase))),
+        ["Install-VisualStudio"] = tokens => tokens.Any(t => t.Kind == TokenKind.Parameter
+            && t.Text.Equals("-SignatureThumbprint", StringComparison.InvariantCultureIgnoreCase)),
         ["Test-FileSignature"] = _ => true,
         ["Test-FileChecksum"] = _ => true
     };
@@ -129,7 +133,7 @@ public static class GatherPowerShell
                     foreach (var (line, token) in commandList)
                     {
                         var lineTokens = indexedTokens[line];
-                        if (searchedToken.Value(lineTokens) /*&& lineTokens[0].Kind != TokenKind.Function*/)
+                        if (searchedToken.Value(lineTokens))
                         {
                             var matchedToken = indexedTokens[line][token];
 

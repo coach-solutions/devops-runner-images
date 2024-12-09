@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ValidateRunnerImagesSignatures;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var curDir = Environment.CurrentDirectory;
 var repoDir = Path.GetFullPath(Path.Combine(curDir, "..", "..", "..", "..", ".."));
@@ -81,6 +80,29 @@ function Validate-Install-Binary {
     if ($ExtraInstallArgs -and $InstallArgs) {
         throw ""InstallArgs and ExtraInstallArgs parameters cannot be used together.""
     }
+}
+
+function Validate-Install-VisualStudio {
+    Param
+    (
+        [Parameter(Mandatory)] [String] $Version,
+        [Parameter(Mandatory)] [String] $Edition,
+        [Parameter(Mandatory)] [String] $Channel,
+        [Parameter(Mandatory)] [String[]] $RequiredComponents,
+        [String] $ExtraArgs = """",
+        [Parameter(Mandatory)] [String[]] $SignatureThumbprint
+    )
+
+    $bootstrapperUrl = ""https://aka.ms/vs/${Version}/${Channel}/vs_${Edition}.exe""
+    $channelUri = ""https://aka.ms/vs/${Version}/${Channel}/channel""
+    $channelId = ""VisualStudio.${Version}.Release""
+    $productId = ""Microsoft.VisualStudio.Product.${Edition}""
+
+    Write-Host ""Downloading Bootstrapper ...""
+    $bootstrapperFilePath = Invoke-DownloadWithRetry $BootstrapperUrl
+
+    # Verify that the bootstrapper is signed by Microsoft
+    Test-FileSignature -Path $bootstrapperFilePath -ExpectedThumbprint $SignatureThumbprint
 }
 
 function Validate-Remove-Item {
