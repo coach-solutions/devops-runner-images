@@ -34,7 +34,8 @@ function Validate-Install-Binary {
         [String[]] $ExtraInstallArgs,
         [String[]] $ExpectedSignature,
         [String] $ExpectedSHA256Sum,
-        [String] $ExpectedSHA512Sum
+        [String] $ExpectedSHA512Sum,
+        [String] $InstallerLogPath
     )
 
     if ($PSCmdlet.ParameterSetName -eq ""LocalPath"") {

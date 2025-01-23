@@ -65,7 +65,9 @@ public static class GatherPowerShell
     {
         "[System.Diagnostics.FileVersionInfo]::GetVersionInfo",
         "[System.IO.Path]::GetTempPath",
-        "[System.IO.Path]::GetRandomFileName"
+        "[System.IO.Path]::GetRandomFileName",
+        "[Int32]::TryParse",
+        "[System.Net.WebRequest]::Create"
     };
 
     private static readonly HashSet<string> _skipCommands = new HashSet<string>(_comparer)
