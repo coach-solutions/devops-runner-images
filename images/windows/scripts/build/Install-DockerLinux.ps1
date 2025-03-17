@@ -65,9 +65,6 @@ while ($wslTries -lt 3)
 {
     try
     {   
-        ubuntu.exe install --root
-        wsl.exe --set-version Ubuntu 2
-        
         # apt install -y isn't enough to be truly noninteractive
         $env:DEBIAN_FRONTEND = "noninteractive"
         $env:WSLENV += ":DEBIAN_FRONTEND"
@@ -150,8 +147,6 @@ wsl.exe --export Ubuntu 'C:\DockerLinux\docker.tar'
 
 # remove Ubuntu installation
 wsl.exe --unregister Ubuntu
-$ubuntuPackageName = (Get-AppxPackage | Where-Object { $_.Name -eq 'CanonicalGroupLimited.Ubuntu' }).PackageFullName
-Remove-AppxPackage $ubuntuPackageName
 
 # install distribution
 Write-Host "Install Ubuntu distribution for Docker"
