@@ -89,6 +89,7 @@ function Validate-Install-VisualStudio {
         [Parameter(Mandatory)] [String] $Version,
         [Parameter(Mandatory)] [String] $Edition,
         [Parameter(Mandatory)] [String] $Channel,
+        [String] $InstallChannel = """",
         [Parameter(Mandatory)] [String[]] $RequiredComponents,
         [String] $ExtraArgs = """",
         [Parameter(Mandatory)] [String[]] $SignatureThumbprint

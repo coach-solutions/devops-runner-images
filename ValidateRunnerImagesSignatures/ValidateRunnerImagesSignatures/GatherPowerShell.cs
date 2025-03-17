@@ -82,7 +82,8 @@ public static class GatherPowerShell
         "Set-JavaPath",
         "Install-Msys2Packages",
         "Install-MingwPackages",
-        "Install-VSIXFromFile"
+        "Install-VSIXFromFile",
+        "Move-Item"
     };
 
     private static readonly HashSet<string> _skipRawTokenText = new HashSet<string>(_comparer)

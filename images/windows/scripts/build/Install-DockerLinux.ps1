@@ -161,10 +161,11 @@ $dockerPassword = [System.GUID]::NewGuid().ToString().ToUpper()
 $dockerSecurePassword = ConvertTo-SecureString $dockerPassword -AsPlainText -Force
 
 $params = @{
-    Name        = $dockerUser
-    Password    = $dockerSecurePassword
-    FullName    = 'Docker Linux'
-    Description = 'Docker user account.'
+    Name                 = $dockerUser
+    Password             = $dockerSecurePassword
+    PasswordNeverExpires = $true
+    FullName             = 'Docker Linux'
+    Description          = 'Docker user account.'
 }
 New-LocalUser @params
 Add-LocalGroupMember -Group "Administrators" -Member $dockerUser
