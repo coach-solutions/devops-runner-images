@@ -7,7 +7,8 @@
             "versions": [
                 "3.0",
                 "3.1",
-                "3.2"
+                "3.2",
+                "3.3"
             ],
             "default": "3.0"
         },
@@ -92,29 +93,9 @@
     ],
     "azureModules": [
         {
-            "name": "azurerm",
-            "versions": [
-                "6.13.1"
-            ],
-            "zip_versions": [
-                "6.7.0"
-            ],
-            "default": "6.13.1"
-        },
-        {
-            "name": "azure",
-            "versions": [
-                "5.3.0"
-            ],
-            "zip_versions": [
-                "5.1.1"
-            ],
-            "default": "5.3.0"
-        },
-        {
             "name": "az",
             "versions": [
-                "12.1.0"
+                "12.4.0"
             ],
             "zip_versions": [
 
@@ -138,18 +119,25 @@
         "addons": [],
         "additional_tools": [
             "cmake;3.18.1",
-            "cmake;3.22.1"
+            "cmake;3.22.1",
+            "cmake;3.31.5"
         ],
         "ndk": {
             "default": "27",
             "versions": [
-                "26", "27"
+                "26", "27", "28"
             ]
         }
     },
     "mingw": {
         "version": "12.2.0",
-        "runtime": "ucrt"
+        "runtime": "ucrt",
+        "pinnedDetails": {
+            "link": "https://github.com/actions/runner-images-internal/pull/6702",
+            "reason": "Meaningful reason must be added at next update.",
+            "review-at": "2025-06-01",
+            "type": "preexisting-pinned-version-without-reason"
+        }
     },
     "MsysPackages": {
         "msys2": [],
@@ -172,7 +160,11 @@
         "subversion" : "17",
         "edition" : "Enterprise",
         "channel": "release",
-        "signature": "8F985BE8FD256085C90A95D3C74580511A1DB975",
+        "installChannel": "658092423_1519083591",
+        "signature": [
+            "245D262748012A4FE6CE8BA6C951A4C4AFBC3E5D",
+            "8F985BE8FD256085C90A95D3C74580511A1DB975"
+        ],
         "workloads": [
             "Component.Dotfuscator",
             "Component.Linux.CMake",
@@ -274,8 +266,8 @@
         "images": [
         ],
         "components": {
-            "docker": "26.1.3",
-            "compose": "2.27.1"
+            "docker": "27.5.1",
+            "compose": "2.32.2"
         }
     },
     "pipx": [
@@ -342,7 +334,8 @@
                 "name": "cmake.install",
                 "args": [ "--installargs", "ADD_CMAKE_TO_PATH=\"System\"" ]
             },
-            { "name": "imagemagick" }
+            { "name": "imagemagick" },
+            { "name": "ninja" }
         ]
     },
     "node": {
@@ -357,7 +350,7 @@
     },
     "mongodb": {
         "version": "5.0",
-        "signature": "F2D7C28591847BB2CB2B1C2A0C59459FDC728A38"
+        "signature": "A5BBE2A6DA1D2A6E057EF870267E6A91E4D56BAA"
     },
     "nsis": {
         "version": "3.10"
@@ -366,19 +359,25 @@
         "version": "18"
     },
     "php": {
-        "version": "8.3"
+        "version": "8.4"
     },
     "postgresql": {
         "signature": "698BA51AA27CC31282AACA5055E4B9190BC6C0E9",
         "version": "14",
-        "vcRedistSignature": "245D262748012A4FE6CE8BA6C951A4C4AFBC3E5D",
+        "vcRedistSignature": "8F985BE8FD256085C90A95D3C74580511A1DB975",
         "installVcRedist": true
     },
     "kotlin": {
         "version": "latest"
     },
     "openssl": {
-        "version": "1.1.1"
+        "version": "1.1.1",
+        "pinnedDetails": {
+            "link": "https://github.com/actions/runner-images-internal/pull/6702",
+            "reason": "Meaningful reason must be added at next update.",
+            "review-at": "2024-06-01",
+            "type": "preexisting-pinned-version-without-reason"
+        }
     },
     "pwsh": {
         "version": "7.4"
