@@ -59,7 +59,7 @@ packer build    -var "client_id=$ClientId" `
                 -var "virtual_network_name=$VirtualNetworkName" `
                 -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
                 -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
-                -var "azure_tags={$azure_tags}" `
+                -var "azure_tags=$azure_tags" `
                 -color=false `
                 $TemplatePath `
         | Where-Object {
