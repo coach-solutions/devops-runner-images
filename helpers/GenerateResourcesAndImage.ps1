@@ -4,13 +4,11 @@ enum ImageType {
     Windows2019   = 1
     Windows2022   = 2
     Windows2025   = 3
-    Ubuntu2004    = 4
-    Ubuntu2204    = 5
-    Ubuntu2404    = 6
-    UbuntuMinimal = 7
+    Ubuntu2204    = 4
+    Ubuntu2404    = 5
 }
 
-Function Get-PackerTemplatePath {
+Function Get-PackerTemplate {
     param (
         [Parameter(Mandatory = $True)]
         [string] $RepositoryRoot,
@@ -21,36 +19,41 @@ Function Get-PackerTemplatePath {
     switch ($ImageType) {
         # Note: Double Join-Path is required to support PowerShell 5.1
         ([ImageType]::Windows2019) {
-            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "windows-2019.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "build.windows-2019.pkr.hcl"
+            $imageOS = "win19"
         }
         ([ImageType]::Windows2022) {
-            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "windows-2022.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "build.windows-2022.pkr.hcl"
+            $imageOS = "win22"
         }
         ([ImageType]::Windows2025) {
-            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "windows-2025.pkr.hcl"
-        }
-        ([ImageType]::Ubuntu2004) {
-            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-20.04.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "build.windows-2025.pkr.hcl"
+            $imageOS = "win25"
         }
         ([ImageType]::Ubuntu2204) {
-            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-22.04.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "build.ubuntu-22_04.pkr.hcl"
+            $imageOS = "ubuntu22"
         }
         ([ImageType]::Ubuntu2404) {
-            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-24.04.pkr.hcl"
-        }
-        ([ImageType]::UbuntuMinimal) {
-            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-minimal.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "build.ubuntu-24_04.pkr.hcl"
+            $imageOS = "ubuntu24"
         }
         default { throw "Unknown type of image" }
     }
 
     $imageTemplatePath = [IO.Path]::Combine($RepositoryRoot, "images", $relativeTemplatePath)
+    # Specific template selection using Packer's "-only" functionality
+    $buildName = [IO.Path]::GetFileName($imageTemplatePath).Split(".")[1]
 
     if (-not (Test-Path $imageTemplatePath)) {
         throw "Template for image '$ImageType' doesn't exist on path '$imageTemplatePath'."
     }
 
-    return $imageTemplatePath;
+    return [PSCustomObject] @{
+        "BuildName" = $buildName
+        "ImageOS"   = $imageOS
+        "Path"      = [IO.Path]::GetDirectoryName($imageTemplatePath)
+    }
 }
 
 Function Show-LatestCommit {
@@ -85,7 +88,7 @@ Function GenerateResourcesAndImage {
         .PARAMETER ResourceGroupName
             The name of the resource group to store the resulting artifact. Resource group must already exist.
         .PARAMETER ImageType
-            The type of image to generate. Valid values are: Windows2019, Windows2022, Windows2025, Ubuntu2004, Ubuntu2204, Ubuntu2404, UbuntuMinimal.
+            The type of image to generate. Valid values are: Windows2019, Windows2022, Windows2025, Ubuntu2204, Ubuntu2404.
         .PARAMETER ManagedImageName
             The name of the managed image to create. The default is "Runner-Image-{{ImageType}}".
         .PARAMETER AzureLocation
@@ -116,7 +119,7 @@ Function GenerateResourcesAndImage {
         .PARAMETER PluginVersion
             Specify the version of the packer Azure plugin to use. The default is "2.2.1".
         .EXAMPLE
-            GenerateResourcesAndImage -SubscriptionId {YourSubscriptionId} -ResourceGroupName "shsamytest1" -ImageGenerationRepositoryRoot "C:\runner-images" -ImageType Ubuntu2004 -AzureLocation "East US"
+            GenerateResourcesAndImage -SubscriptionId {YourSubscriptionId} -ResourceGroupName "shsamytest1" -ImageGenerationRepositoryRoot "C:\runner-images" -ImageType Ubuntu2204 -AzureLocation "East US"
     #>
     param (
         [Parameter(Mandatory = $True)]
@@ -159,12 +162,12 @@ Function GenerateResourcesAndImage {
     }
 
     # Get template path
-    $TemplatePath = Get-PackerTemplatePath -RepositoryRoot $ImageGenerationRepositoryRoot -ImageType $ImageType
-    Write-Debug "Template path: $TemplatePath."
+    $PackerTemplate = Get-PackerTemplate -RepositoryRoot $ImageGenerationRepositoryRoot -ImageType $ImageType
+    Write-Debug "Template path: $($PackerTemplate.Path)."
 
     # Prepare list of allowed inbound IP addresses
     if ($RestrictToAgentIpAddress) {
-        $AgentIp = (Invoke-RestMethod http://ipinfo.io/json).ip
+        $AgentIp = (Invoke-RestMethod https://ipinfo.io/json).ip
         if (-not $AgentIp) {
             throw "Unable to determine agent IP address."
         }
@@ -212,17 +215,19 @@ Function GenerateResourcesAndImage {
 
     Write-Host "Validating packer template..."
     & $PackerBinary validate `
+        "-only=$($PackerTemplate.BuildName)*" `
         "-var=client_id=fake" `
         "-var=client_secret=fake" `
         "-var=subscription_id=$($SubscriptionId)" `
         "-var=tenant_id=fake" `
         "-var=location=$($AzureLocation)" `
+        "-var=image_os=$($PackerTemplate.ImageOS)" `
         "-var=managed_image_name=$($ManagedImageName)" `
         "-var=managed_image_resource_group_name=$($ResourceGroupName)" `
         "-var=install_password=$($InstallPassword)" `
         "-var=allowed_inbound_ip_addresses=$($AllowedInboundIpAddresses)" `
         "-var=azure_tags=$($TagsJson)" `
-        $TemplatePath
+        $PackerTemplate.Path
 
     if ($LastExitCode -ne 0) {
         throw "Packer template validation failed."
@@ -280,17 +285,19 @@ Function GenerateResourcesAndImage {
         Write-Debug "Tenant id: $TenantId."
 
         & $PackerBinary build -on-error="$($OnError)" `
+            -only "$($PackerTemplate.BuildName)*" `
             -var "client_id=$($ServicePrincipalAppId)" `
             -var "client_secret=$($ServicePrincipalPassword)" `
             -var "subscription_id=$($SubscriptionId)" `
             -var "tenant_id=$($TenantId)" `
             -var "location=$($AzureLocation)" `
+            -var "image_os=$($PackerTemplate.ImageOS)" `
             -var "managed_image_name=$($ManagedImageName)" `
             -var "managed_image_resource_group_name=$($ResourceGroupName)" `
             -var "install_password=$($InstallPassword)" `
             -var "allowed_inbound_ip_addresses=$($AllowedInboundIpAddresses)" `
             -var "azure_tags=$($TagsJson)" `
-            $TemplatePath
+            $PackerTemplate.Path
 
         if ($LastExitCode -ne 0) {
             throw "Failed to build image."

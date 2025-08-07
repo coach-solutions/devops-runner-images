@@ -58,14 +58,6 @@ if ($null -ne ($toolsetVersion | Select-String -Pattern '\d+\.\d+\.\d+')) {
     } while (!$response)
 }
 
-if ((Get-ToolsetContent).postgresql.installVcRedist) {
-    # Postgres 14 requires the vs 17 redistributable
-    $vs17RedistUrl = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-    Install-Binary `
-        -Url $vs17RedistUrl `
-        -InstallArgs @("/install", "/quiet", "/norestart") `
-        -ExpectedSignature (Get-ToolsetContent).postgresql.vcRedistSignature
-}
 
 # Return the previous value of ErrorAction and invoke Install-Binary function
 $ErrorActionPreference = $errorActionOldValue
@@ -74,7 +66,7 @@ $installerArgs = @("--install_runtimes 0", "--superpassword root", "--enable_acl
 Install-Binary `
     -Url $installerUrl `
     -InstallArgs $installerArgs `
-    -ExpectedSignature (Get-ToolsetContent).postgresql.signature `
+    -ExpectedSubject 'CN=EnterpriseDB Corporation, O=EnterpriseDB Corporation, S=Massachusetts, C=US' `
     -InstallerLogPath "$env:TEMP\**\install-postgresql.log"
 
 # Get Path to pg_ctl.exe

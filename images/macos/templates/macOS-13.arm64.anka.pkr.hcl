@@ -247,6 +247,7 @@ build {
       "${path.root}/../scripts/build/install-android-sdk.sh",
       "${path.root}/../scripts/build/install-safari.sh",
       "${path.root}/../scripts/build/install-chrome.sh",
+      "${path.root}/../scripts/build/install-firefox.sh",
       "${path.root}/../scripts/build/install-bicep.sh",
       "${path.root}/../scripts/build/install-codeql-bundle.sh"
     ]
@@ -284,6 +285,9 @@ build {
 
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; source $HOME/.bash_profile; {{ .Vars }} {{ .Path }}"
-    scripts         = ["${path.root}/../scripts/build/configure-hostname.sh"]
+    scripts         = [
+      "${path.root}/../scripts/build/configure-hostname.sh",
+      "${path.root}/../scripts/build/configure-system.sh"
+    ]
   }
 }
