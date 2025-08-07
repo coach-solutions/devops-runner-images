@@ -94,7 +94,7 @@ jobs:
       filePath: ./images.CI/linux-and-win/build-image.ps1
       arguments: -ClientId $(CLIENT_ID) `
                  -ClientSecret "$(ClientSecret)" `
-                 -TemplatePath $(TemplatePath) `
+                 -TemplatePath $(TemplateDirectoryPath) `
                  -BuildTemplateName "${{ parameters.image_template_name }}" `
                  -ImageName "$(ManagedImageName)" `
                  -ImageResourceGroupName $(AZURE_RESOURCE_GROUP) `
