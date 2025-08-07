@@ -12,6 +12,9 @@ parameters:
   - name: image_type
     type: string
 
+  - name: image_os
+    type: string
+
   - name: image_template_name
     type: string
 
@@ -92,11 +95,13 @@ jobs:
       arguments: -ClientId $(CLIENT_ID) `
                  -ClientSecret "$(ClientSecret)" `
                  -TemplatePath $(TemplatePath) `
+                 -BuildTemplateName "${{ parameters.image_template_name }}" `
                  -ImageName "$(ManagedImageName)" `
                  -ImageResourceGroupName $(AZURE_RESOURCE_GROUP) `
                  -TempResourceGroupName "$(TempResourceGroupName)" `
                  -SubscriptionId $(AZURE_SUBSCRIPTION) `
                  -TenantId $(AZURE_TENANT) `
+                 -ImageOS "${{ parameters.image_os }}" `
                  -Location $(AZURE_LOCATION) `
                  -VirtualNetworkName $(BUILD_AGENT_VNET_NAME) `
                  -VirtualNetworkRG $(BUILD_AGENT_VNET_RESOURCE_GROUP) `

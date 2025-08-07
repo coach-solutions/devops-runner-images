@@ -4,5 +4,6 @@ jobs:
 - template: image-generation.yml
   parameters:
     image_type: windows2022
+    image_os: win22
     image_readme_name: Windows2022-Readme.md
-    image_template_name: windows-2022.pkr.hcl
+    image_template_name: build.windows-2022.pkr.hcl
