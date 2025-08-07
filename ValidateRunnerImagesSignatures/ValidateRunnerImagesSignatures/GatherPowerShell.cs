@@ -58,7 +58,8 @@ public static class GatherPowerShell
         "ConvertFrom-Json",
         "Group-Object",
         "Invoke-ScriptBlockWithRetry",
-        "Get-ChildItem"
+        "Get-ChildItem",
+        "Get-MicrosoftPublisher"
     };
 
     private static readonly HashSet<string> _allowedStaticMemberAccess = new HashSet<string>(_comparer)
