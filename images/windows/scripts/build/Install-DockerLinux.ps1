@@ -58,7 +58,7 @@ $wslDownloadUrl = Resolve-GithubReleaseAssetUrl `
     -UrlMatchPattern "wsl.*.x64.msi"
 Install-Binary -Url $wslDownloadUrl
 
-wsl.exe --install Ubuntu -n --web-download
+wsl.exe --install Ubuntu --name Docker -n --web-download
 
 $wslTries = 0
 while ($wslTries -lt 3)
@@ -72,43 +72,43 @@ while ($wslTries -lt 3)
         # update software
         Write-Host "Update Ubuntu"
         
-        wsl.exe -u root -d Ubuntu apt-get update
-        wsl.exe -u root -d Ubuntu apt-get full-upgrade -y
-        wsl.exe -u root -d Ubuntu apt-get autoremove -y
-        wsl.exe -u root -d Ubuntu apt-get autoclean
-        wsl.exe -u root -d Ubuntu echo '"[boot]"' '|' tee /etc/wsl.conf '>' /dev/null
-        wsl.exe -u root -d Ubuntu echo '"systemd=true"' '|' tee -a /etc/wsl.conf '>' /dev/null
+        wsl.exe -u root -d Docker apt-get update
+        wsl.exe -u root -d Docker apt-get full-upgrade -y
+        wsl.exe -u root -d Docker apt-get autoremove -y
+        wsl.exe -u root -d Docker apt-get autoclean
+        wsl.exe -u root -d Docker echo '[boot]' '|' tee /etc/wsl.conf '>' /dev/null
+        wsl.exe -u root -d Docker echo 'systemd=true' '|' tee -a /etc/wsl.conf '>' /dev/null
         wsl.exe --shutdown  # instead of 'reboot'
         
         # install docker
         Write-Host "Install Docker"
         
-        wsl.exe -u root -d Ubuntu apt-get install ca-certificates curl openssh-server -y
-        wsl.exe -u root -d Ubuntu echo 'ClientAliveInterval 300' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
-        wsl.exe -u root -d Ubuntu echo 'ClientAliveCountMax 3' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
-        wsl.exe -u root -d Ubuntu echo 'MaxSessions 50' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
-        wsl.exe -u root -d Ubuntu echo 'MaxStartups 50:50:100' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
-        wsl.exe -u root -d Ubuntu install -m 0755 -d /etc/apt/keyrings
-        wsl.exe -u root -d Ubuntu curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-        wsl.exe -u root -d Ubuntu chmod a+r /etc/apt/keyrings/docker.asc
-        wsl.exe -u root -d Ubuntu echo '"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable"' '|' tee /etc/apt/sources.list.d/docker.list '>' /dev/null
-        wsl.exe -u root -d Ubuntu apt-get update
-        wsl.exe -u root -d Ubuntu apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y '2>&1'
-        wsl.exe -u root -d Ubuntu systemctl enable docker.service '2>&1'
-        wsl.exe -u root -d Ubuntu systemctl enable containerd.service '2>&1'
-        wsl.exe -u root -d Ubuntu systemctl enable ssh.service '2>&1'
+        wsl.exe -u root -d Docker apt-get install ca-certificates curl openssh-server -y
+        wsl.exe -u root -d Docker echo 'ClientAliveInterval 300' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
+        wsl.exe -u root -d Docker echo 'ClientAliveCountMax 3' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
+        wsl.exe -u root -d Docker echo 'MaxSessions 50' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
+        wsl.exe -u root -d Docker echo 'MaxStartups 50:50:100' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
+        wsl.exe -u root -d Docker install -m 0755 -d /etc/apt/keyrings
+        wsl.exe -u root -d Docker curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+        wsl.exe -u root -d Docker chmod a+r /etc/apt/keyrings/docker.asc
+        wsl.exe -u root -d Docker echo 'deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable' '|' tee /etc/apt/sources.list.d/docker.list '>' /dev/null
+        wsl.exe -u root -d Docker apt-get update
+        wsl.exe -u root -d Docker apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y '2>&1'
+        wsl.exe -u root -d Docker systemctl enable docker.service '2>&1'
+        wsl.exe -u root -d Docker systemctl enable containerd.service '2>&1'
+        wsl.exe -u root -d Docker systemctl enable ssh.service '2>&1'
         
         # expose docker to windows
-        wsl.exe -u root -d Ubuntu useradd -c'docker user' -m -s /bin/bash dockerssh
-        wsl.exe -u root -d Ubuntu passwd -d dockerssh '2>&1'
-        wsl.exe -u root -d Ubuntu usermod -a -G docker dockerssh
-        wsl.exe -u root -d Ubuntu echo 'PermitEmptyPasswords yes' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
-        wsl.exe -u root -d Ubuntu echo 'StrictModes yes' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
-        wsl.exe -u root -d Ubuntu echo 'ssh' '|' tee -a /etc/securetty '>' /dev/null
+        wsl.exe -u root -d Docker useradd -c'docker user' -m -s /bin/bash dockerssh
+        wsl.exe -u root -d Docker passwd -d dockerssh '2>&1'
+        wsl.exe -u root -d Docker usermod -a -G docker dockerssh
+        wsl.exe -u root -d Docker echo 'PermitEmptyPasswords yes' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
+        wsl.exe -u root -d Docker echo 'StrictModes yes' '|' tee -a /etc/ssh/sshd_config '>' /dev/null
+        wsl.exe -u root -d Docker echo 'ssh' '|' tee -a /etc/securetty '>' /dev/null
         wsl.exe --shutdown
-        wsl.exe -u root -d Ubuntu ln -s /mnt/c /c
-        wsl.exe -u root -d Ubuntu ln -s /mnt/d /d
-        wsl.exe -u root -d Ubuntu mount --make-shared /mnt/c
+        wsl.exe -u root -d Docker ln -s /mnt/c /c
+        wsl.exe -u root -d Docker ln -s /mnt/d /d
+        wsl.exe -u root -d Docker mount --make-shared /mnt/c
 
         ssh.exe -o StrictHostKeyChecking=accept-new 'dockerssh@localhost' echo Done
         if ($?) {
@@ -129,7 +129,7 @@ while ($wslTries -lt 3)
         }
 
         Write-Host 'Failed updating and installing Ubuntu and Docker - retrying...'
-        wsl.exe --unregister Ubuntu
+        wsl.exe --unregister Docker
     }
 }
 
@@ -143,10 +143,10 @@ $Env:COMPOSE_CONVERT_WINDOWS_PATHS = 1
 [Environment]::SetEnvironmentVariable("COMPOSE_CONVERT_WINDOWS_PATHS", "1", "Machine")
 
 # export distro
-wsl.exe --export Ubuntu 'C:\DockerLinux\docker.tar'
+wsl.exe --export Docker 'C:\DockerLinux\docker.tar'
 
 # remove Ubuntu installation
-wsl.exe --unregister Ubuntu
+wsl.exe --unregister Docker
 
 # install distribution
 Write-Host "Install Ubuntu distribution for Docker"
