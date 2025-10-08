@@ -29,6 +29,27 @@ WaitUntilServices "Hyper-V Virtual Machine Management" "Running"
 WaitUntilServices "WSL Service" "Running"
 WaitUntilServices "User Profile Service" "Running"
 
+# --- Detect host resources ---
+$cs = Get-CimInstance Win32_ComputerSystem
+$totalRAMBytes = [double]$cs.TotalPhysicalMemory
+$totalRAMGB    = [math]::Floor($totalRAMBytes / 1GB)
+
+# Compute WSL RAM
+$targetWSLGB = $totalRAMGB - 5
+
+# Paths
+$userProfile = $env:UserProfile
+$wslconfig   = Join-Path $userProfile ".wslconfig"
+
+# Generate .wslconfig content
+$ini = @"
+[wsl2]
+memory=${targetWSLGB}GB
+"@
+
+# Write .wslconfig file
+$ini | Set-Content -Path $wslconfig -Encoding ASCII
+
 Start-ScheduledTask -TaskPath '\DockerLinux\' 'Run-Docker-Wsl'
 Start-Sleep -Seconds 3
 
