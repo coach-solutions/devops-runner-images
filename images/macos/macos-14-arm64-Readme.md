@@ -1,13 +1,14 @@
 | Announcements |
 |-|
+| [[macOS] The macOS 13 Ventura based runner images will begin deprecation on September 22nd and will be fully unsupported by December 4th for GitHub and ADO](https://github.com/actions/runner-images/issues/13046) |
+| [[macOS] The additional macOS 15 Sonoma Intel-based image will be available in GitHub Actions](https://github.com/actions/runner-images/issues/13045) |
 | [macOS 26 (Tahoe) is now available as a public beta in GitHub Actions](https://github.com/actions/runner-images/issues/13008) |
-| [[macOS] Cmake will be updated to version 4.* on September 8th](https://github.com/actions/runner-images/issues/12934) |
 | [[macOS] Deprecation of 4 tools on November 3rd.](https://github.com/actions/runner-images/issues/12873) |
 ***
 # macOS 14
 - OS Version: macOS 14.7.6 (23H626)
 - Kernel Version: Darwin 23.6.0
-- Image Version: 20250915.1804
+- Image Version: 20250928.1833
 
 ## Installed Software
 
@@ -35,19 +36,19 @@
 - Bundler 2.7.2
 - Carthage 0.40.0
 - CocoaPods 1.16.2
-- Homebrew 4.6.10
+- Homebrew 4.6.14
 - NPM 10.8.2
 - NuGet 6.3.1.1
 - Pip3 25.2 (python 3.13)
 - Pipx 1.7.1
 - RubyGems 3.7.2
-- Vcpkg 2025 (build from commit 62efe42f53)
+- Vcpkg 2025 (build from commit 2e6fcc4457)
 - Yarn 1.22.22
 
 ### Project Management
 - Apache Ant 1.10.15
 - Apache Maven 3.9.11
-- Gradle 9.0.0
+- Gradle 9.1.0
 
 ### Utilities
 - 7-Zip 17.05
@@ -59,7 +60,7 @@
 - Curl 8.7.1
 - Git 2.50.1
 - Git LFS 3.7.0
-- GitHub CLI 2.79.0
+- GitHub CLI 2.80.0
 - GNU Tar 1.35 - available by 'gtar' alias
 - GNU Wget 1.25.0
 - gpg (GnuPG) 2.4.8
@@ -73,16 +74,16 @@
 - Ninja 1.13.1
 
 ### Tools
-- AWS CLI 2.30.1
+- AWS CLI 2.31.3
 - AWS SAM CLI 1.144.0
 - AWS Session Manager CLI 1.2.707.0
 - Azure CLI 2.77.0
 - Azure CLI (azure-devops) 1.0.2
 - Bicep CLI 0.37.4
 - Cmake 4.1.1
-- CodeQL Action Bundle 2.23.0
+- CodeQL Action Bundle 2.23.1
 - Fastlane 2.228.0
-- SwiftFormat 0.57.2
+- SwiftFormat 0.58.1
 - Xcbeautify 2.30.1
 - Xcode Command Line Tools 16.2.0.0.1.1733547573
 - Xcodes 1.6.2
@@ -90,12 +91,12 @@
 ### Browsers
 - Safari 18.5 (19621.2.5.18.1)
 - SafariDriver 18.5 (19621.2.5.18.1)
-- Google Chrome 140.0.7339.133
-- Google Chrome for Testing 140.0.7339.82
-- ChromeDriver 140.0.7339.82
-- Microsoft Edge 140.0.3485.66
-- Microsoft Edge WebDriver 140.0.3485.66
-- Mozilla Firefox 142.0.1
+- Google Chrome 140.0.7339.214
+- Google Chrome for Testing 140.0.7339.207
+- ChromeDriver 140.0.7339.207
+- Microsoft Edge 140.0.3485.94
+- Microsoft Edge WebDriver 140.0.3485.94
+- Mozilla Firefox 143.0.1
 - geckodriver 0.36.0
 - Selenium server 4.35.0
 
@@ -112,6 +113,7 @@
 | 11.0.28+6            | JAVA_HOME_11_arm64   |
 | 17.0.16+8            | JAVA_HOME_17_arm64   |
 | 21.0.8+9.0 (default) | JAVA_HOME_21_arm64   |
+| 25.0.0+36.0          | JAVA_HOME_25_arm64   |
 
 ### Cached Tools
 
@@ -119,7 +121,7 @@
 - 3.1.7
 - 3.2.9
 - 3.3.9
-- 3.4.5
+- 3.4.6
 
 #### Python
 - 3.11.9
@@ -129,7 +131,7 @@
 #### Node.js
 - 18.20.8
 - 20.19.5
-- 22.19.0
+- 22.20.0
 
 #### Go
 - 1.22.12
@@ -138,17 +140,17 @@
 - 1.25.1
 
 ### Rust Tools
-- Cargo 1.89.0
-- Rust 1.89.0
-- Rustdoc 1.89.0
+- Cargo 1.90.0
+- Rust 1.90.0
+- Rustdoc 1.90.0
 - Rustup 1.28.2
 
 #### Packages
-- Clippy 0.1.89
+- Clippy 0.1.90
 - Rustfmt 1.8.0-stable
 
 ### PowerShell Tools
-- PowerShell 7.4.11
+- PowerShell 7.4.12
 
 #### PowerShell Modules
 - Az: 12.5.0
@@ -256,18 +258,18 @@
 | visionOS 2.2 | Apple Vision Pro                                                                                                                                                                                                                                                                                                                                                         |
 
 ### Android
-| Package Name               | Version                                                                                                                                                                                                                                                                                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Android Command Line Tools | 11.0                                                                                                                                                                                                                                                                                                                                                                      |
-| Android Emulator           | 36.1.9                                                                                                                                                                                                                                                                                                                                                                    |
-| Android SDK Build-tools    | 36.0.0<br>35.0.0 35.0.1<br>34.0.0<br>33.0.2 33.0.3                                                                                                                                                                                                                                                                                                                        |
-| Android SDK Platforms      | android-36-ext19 (rev 1)<br>android-36-ext18 (rev 1)<br>android-36 (rev 2)<br>android-35-ext15 (rev 1)<br>android-35-ext14 (rev 1)<br>android-35 (rev 2)<br>android-34-ext8 (rev 1)<br>android-34-ext12 (rev 1)<br>android-34-ext11 (rev 1)<br>android-34-ext10 (rev 1)<br>android-34 (rev 3)<br>android-33-ext5 (rev 1)<br>android-33-ext4 (rev 1)<br>android-33 (rev 3) |
-| Android SDK Platform-Tools | 36.0.0                                                                                                                                                                                                                                                                                                                                                                    |
-| Android Support Repository | 47.0.0                                                                                                                                                                                                                                                                                                                                                                    |
-| CMake                      | 3.31.5                                                                                                                                                                                                                                                                                                                                                                    |
-| Google Play services       | 49                                                                                                                                                                                                                                                                                                                                                                        |
-| Google Repository          | 58                                                                                                                                                                                                                                                                                                                                                                        |
-| NDK                        | 26.3.11579264 (default)<br>27.3.13750724<br>28.2.13676358                                                                                                                                                                                                                                                                                                                 |
+| Package Name               | Version                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Android Command Line Tools | 11.0                                                                                                                                                                                                                                                                                                                                                                                              |
+| Android Emulator           | 36.1.9                                                                                                                                                                                                                                                                                                                                                                                            |
+| Android SDK Build-tools    | 36.0.0 36.1.0<br>35.0.0 35.0.1<br>34.0.0<br>33.0.2 33.0.3                                                                                                                                                                                                                                                                                                                                         |
+| Android SDK Platforms      | android-36.1 (rev 1)<br>android-36-ext19 (rev 1)<br>android-36-ext18 (rev 1)<br>android-36 (rev 2)<br>android-35-ext15 (rev 1)<br>android-35-ext14 (rev 1)<br>android-35 (rev 2)<br>android-34-ext8 (rev 1)<br>android-34-ext12 (rev 1)<br>android-34-ext11 (rev 1)<br>android-34-ext10 (rev 1)<br>android-34 (rev 3)<br>android-33-ext5 (rev 1)<br>android-33-ext4 (rev 1)<br>android-33 (rev 3) |
+| Android SDK Platform-Tools | 36.0.0                                                                                                                                                                                                                                                                                                                                                                                            |
+| Android Support Repository | 47.0.0                                                                                                                                                                                                                                                                                                                                                                                            |
+| CMake                      | 3.31.5                                                                                                                                                                                                                                                                                                                                                                                            |
+| Google Play services       | 49                                                                                                                                                                                                                                                                                                                                                                                                |
+| Google Repository          | 58                                                                                                                                                                                                                                                                                                                                                                                                |
+| NDK                        | 26.3.11579264 (default)<br>27.3.13750724<br>28.2.13676358                                                                                                                                                                                                                                                                                                                                         |
 
 #### Environment variables
 | Name                    | Value                                               |
